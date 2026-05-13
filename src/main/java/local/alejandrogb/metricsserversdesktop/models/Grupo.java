@@ -1,6 +1,7 @@
 package local.alejandrogb.metricsserversdesktop.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Grupo {
@@ -8,8 +9,10 @@ public class Grupo {
 	private int id;
 	private String nombre;
 	private String dn;
+	// api-py devuelve "superadmin" (todo minúsculas)
+	@JsonProperty("superadmin")
 	private Boolean superAdmin;
-	private PermissionMap<Integer> permisos;
+	private PermissionMap permisos;
 
 	public Grupo() {
 	}
@@ -21,7 +24,7 @@ public class Grupo {
 		this.superAdmin = superAdmin;
 	}
 
-	public Grupo(int id, String nombre, String dn, Boolean superAdmin, PermissionMap<Integer> permisos) {
+	public Grupo(int id, String nombre, String dn, Boolean superAdmin, PermissionMap permisos) {
 		this(id, nombre, dn, superAdmin);
 		this.permisos = permisos;
 	}
@@ -58,11 +61,11 @@ public class Grupo {
 		this.superAdmin = superAdmin;
 	}
 
-	public PermissionMap<Integer> getPermisos() {
+	public PermissionMap getPermisos() {
 		return permisos;
 	}
 
-	public void setPermisos(PermissionMap<Integer> permisos) {
+	public void setPermisos(PermissionMap permisos) {
 		this.permisos = permisos;
 	}
 

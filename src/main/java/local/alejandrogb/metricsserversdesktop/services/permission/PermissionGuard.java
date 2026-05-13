@@ -126,6 +126,11 @@ public class PermissionGuard {
 		return isSuperAdmin() || hasGlobalKey(MODIFY_SERV) || hasGlobalKey(MODIFY_SYS);
 	}
 
+	/** ¿Puede ver ámbitos? GET /ambitos requiere AUDIT_SYS en api-py. */
+	public boolean canViewAmbitos() {
+		return isSuperAdmin() || hasGlobalKey(AUDIT_SYS) || hasGlobalKey(MODIFY_SYS);
+	}
+
 	// ── Primitivas de clave compuesta ─────────────────────────────────────
 
 	public boolean isSuperAdmin() {
@@ -138,21 +143,21 @@ public class PermissionGuard {
 
 	/**
 	 * Comprueba si la clave compuesta aparece en la lista global del usuario.
+	 * La API devuelve los permisos como strings, por lo que la comparación es directa.
 	 *
 	 * @param key clave compuesta (e.g. {@code "MODIFY_SERV"})
 	 */
 	public boolean hasGlobalKey(String key) {
 		if (isSuperAdmin())
 			return true;
-		PermissionMap<String> pm = permissionMap();
+		PermissionMap pm = permissionMap();
 		if (pm == null || pm.getGlobal() == null)
 			return false;
 		return pm.getGlobal().contains(key);
 	}
 
 	/**
-	 * Comprueba si la clave compuesta aparece en los permisos de una sección
-	 * concreta.
+	 * Comprueba si la clave compuesta aparece en los permisos de una sección concreta.
 	 *
 	 * @param key       clave compuesta (e.g. {@code "MODIFY_SERV"})
 	 * @param seccionId ID de la sección
@@ -162,7 +167,7 @@ public class PermissionGuard {
 			return true;
 		if (hasGlobalKey(key))
 			return true;
-		PermissionMap<String> pm = permissionMap();
+		PermissionMap pm = permissionMap();
 		if (pm == null || pm.getSections() == null)
 			return false;
 		List<String> sectionKeys = pm.getSections().get(seccionId);
@@ -179,7 +184,7 @@ public class PermissionGuard {
 			return true;
 		if (hasGlobalKey(key))
 			return true;
-		PermissionMap<String> pm = permissionMap();
+		PermissionMap pm = permissionMap();
 		if (pm == null || pm.getSections() == null)
 			return false;
 		for (Map.Entry<Integer, List<String>> entry : pm.getSections().entrySet()) {
@@ -195,7 +200,7 @@ public class PermissionGuard {
 		return SessionHolder.getInstance().getSession();
 	}
 
-	private PermissionMap<String> permissionMap() {
+	private PermissionMap permissionMap() {
 		Session s = session();
 		return s != null ? s.getPermisos() : null;
 	}

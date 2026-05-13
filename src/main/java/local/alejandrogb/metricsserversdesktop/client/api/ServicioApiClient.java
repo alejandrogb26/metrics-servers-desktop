@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import local.alejandrogb.metricsserversdesktop.models.Servicio;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 public class ServicioApiClient extends ApiClient {
 
 	public List<Servicio> findAll() {
-		return get("/servicio", new TypeReference<List<Servicio>>() {
+		return getDataPage("/servicio", 100, new TypeReference<List<Servicio>>() {
 		});
 	}
 
@@ -19,8 +20,15 @@ public class ServicioApiClient extends ApiClient {
 		});
 	}
 
+	/** api-py: solo acepta {"nombre": "..."} — extra="forbid". */
 	public Map<String, Object> create(Servicio servicio) {
-		return post("/servicio", servicio, new TypeReference<Map<String, Object>>() {
+		return post("/servicio", Map.of("nombre", servicio.getNombre()), new TypeReference<Map<String, Object>>() {
+		});
+	}
+
+	/** Sube el logo de un servicio. POST /servicio/{id}/logo multipart. */
+	public Map<String, Object> subirLogo(int id, Path file) {
+		return postMultipart("/servicio/" + id + "/logo", file, new TypeReference<Map<String, Object>>() {
 		});
 	}
 

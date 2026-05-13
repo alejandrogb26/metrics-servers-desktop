@@ -8,13 +8,16 @@ import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
+//import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import local.alejandrogb.metricsserversdesktop.ui.util.SwingUtils;
 
@@ -34,6 +37,8 @@ import local.alejandrogb.metricsserversdesktop.ui.util.SwingUtils;
 public abstract class BaseTablePanel<T> extends JPanel {
 
 	private static final long serialVersionUID = 7926822894074333216L;
+	private static final Logger log = LoggerFactory.getLogger(BaseTablePanel.class);
+
 	protected JTable table;
 	protected AbstractTableModel tableModel;
 
@@ -42,8 +47,8 @@ public abstract class BaseTablePanel<T> extends JPanel {
 	protected JButton btnDelete;
 
 	private final JPanel contentPanel;
-	private final LoadingPanel loadingPanel;
-	private final JLayeredPane layered;
+	//private final LoadingPanel loadingPanel;
+	//private final JLayeredPane layered;
 
 	protected BaseTablePanel() {
 		setLayout(new BorderLayout());
@@ -104,8 +109,8 @@ public abstract class BaseTablePanel<T> extends JPanel {
 		contentPanel.add(toolBar, BorderLayout.NORTH);
 		contentPanel.add(scroll, BorderLayout.CENTER);
 
-		loadingPanel = new LoadingPanel();
-		layered = null; // o elimina el atributo si quieres
+		//loadingPanel = new LoadingPanel();
+		//layered = null; // o elimina el atributo si quieres
 
 		add(contentPanel, BorderLayout.CENTER);
 	}
@@ -144,12 +149,16 @@ public abstract class BaseTablePanel<T> extends JPanel {
 	// ── Loading helpers ───────────────────────────────────────────────────
 
 	protected void showLoading(String msg) {
-//		loadingPanel.setMessage(msg);
-//		loadingPanel.setVisible(true);
+		btnNew.setEnabled(false);
+		btnEdit.setEnabled(false);
+		btnDelete.setEnabled(false);
 	}
 
 	protected void hideLoading() {
-//		loadingPanel.setVisible(false);
+		btnNew.setEnabled(true);
+		boolean sel = table.getSelectedRow() >= 0;
+		btnEdit.setEnabled(sel && canEdit());
+		btnDelete.setEnabled(sel && canDelete());
 	}
 
 	/** Recarga los datos desde la API de forma asíncrona. */
@@ -161,7 +170,7 @@ public abstract class BaseTablePanel<T> extends JPanel {
 			revalidate();
 			repaint();
 		}, err -> {
-			err.printStackTrace();
+			log.error("Error cargando datos", err);
 			hideLoading();
 			SwingUtils.showError(this, "Error al cargar datos: " + err.getMessage());
 		});

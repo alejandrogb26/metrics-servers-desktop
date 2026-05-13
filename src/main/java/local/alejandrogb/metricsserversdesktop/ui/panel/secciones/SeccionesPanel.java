@@ -51,21 +51,7 @@ public class SeccionesPanel extends BaseTablePanel<Seccion> {
 	@Override
 	protected void applyData(List<Seccion> data) {
 		model.setData(data);
-
-		table.setModel(model);
-		table.createDefaultColumnsFromModel();
-		configureTable(table);
-
-		table.revalidate();
-		table.repaint();
-
-		if (table.getParent() != null) {
-			table.getParent().revalidate();
-			table.getParent().repaint();
-		}
-
-		revalidate();
-		repaint();
+		refreshTable(model);
 	}
 
 	@Override

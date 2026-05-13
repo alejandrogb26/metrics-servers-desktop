@@ -99,14 +99,18 @@ public class MainFrame extends JFrame {
 			panels.put(CARD_GRUPOS, p);
 		}
 
-		// Permisos y ámbitos: siempre visibles (solo lectura)
-		PermisosPanel pp = new PermisosPanel();
-		cardPanel.add(pp, CARD_PERMISOS);
-		panels.put(CARD_PERMISOS, pp);
-
-		AmbitosPanel ap = new AmbitosPanel();
-		cardPanel.add(ap, CARD_AMBITOS);
-		panels.put(CARD_AMBITOS, ap);
+		// GET /permisos requiere AUDIT_USER
+		if (guard.canViewUsuarios()) {
+			PermisosPanel pp = new PermisosPanel();
+			cardPanel.add(pp, CARD_PERMISOS);
+			panels.put(CARD_PERMISOS, pp);
+		}
+		// GET /ambitos requiere AUDIT_SYS
+		if (guard.canViewAmbitos()) {
+			AmbitosPanel ap = new AmbitosPanel();
+			cardPanel.add(ap, CARD_AMBITOS);
+			panels.put(CARD_AMBITOS, ap);
+		}
 
 		add(cardPanel, BorderLayout.CENTER);
 
@@ -122,7 +126,7 @@ public class MainFrame extends JFrame {
 
 	private JMenuBar buildMenuBar() {
 		JMenuBar bar = new JMenuBar();
-		PermissionGuard guard = PermissionGuard.getInstance();
+		//PermissionGuard guard = PermissionGuard.getInstance();
 
 		// ── Menú Gestión ──────────────────────────────────────────────────
 		JMenu menuGestion = new JMenu("Gestión");
@@ -148,9 +152,15 @@ public class MainFrame extends JFrame {
 		// ── Menú Configuración ────────────────────────────────────────────
 		JMenu menuConfig = new JMenu("Configuración");
 		menuConfig.setMnemonic('C');
-		menuConfig.add(menuItem("Permisos", CARD_PERMISOS));
-		menuConfig.add(menuItem("Ámbitos", CARD_AMBITOS));
-		bar.add(menuConfig);
+		if (panels.containsKey(CARD_PERMISOS)) {
+			menuConfig.add(menuItem("Permisos", CARD_PERMISOS));
+		}
+		if (panels.containsKey(CARD_AMBITOS)) {
+			menuConfig.add(menuItem("Ámbitos", CARD_AMBITOS));
+		}
+		if (menuConfig.getMenuComponentCount() > 0) {
+			bar.add(menuConfig);
+		}
 
 		// ── Menú Sesión ───────────────────────────────────────────────────
 		JMenu menuSesion = new JMenu("Sesión");

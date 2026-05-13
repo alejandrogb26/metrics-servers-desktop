@@ -1,10 +1,16 @@
 package local.alejandrogb.metricsserversdesktop.ui.panel.servidores;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
 import java.io.File;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
@@ -15,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import local.alejandrogb.metricsserversdesktop.models.BulkResult;
+import local.alejandrogb.metricsserversdesktop.models.PageResponse;
 import local.alejandrogb.metricsserversdesktop.models.Seccion;
 import local.alejandrogb.metricsserversdesktop.models.Servicio;
 import local.alejandrogb.metricsserversdesktop.models.servidor.Servidor;
@@ -22,6 +29,9 @@ import local.alejandrogb.metricsserversdesktop.models.servidor.ServidorDTO;
 import local.alejandrogb.metricsserversdesktop.services.crud.SeccionService;
 import local.alejandrogb.metricsserversdesktop.services.crud.ServidorService;
 import local.alejandrogb.metricsserversdesktop.services.crud.ServicioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import local.alejandrogb.metricsserversdesktop.services.permission.PermissionGuard;
 import local.alejandrogb.metricsserversdesktop.ui.component.BaseTablePanel;
 import local.alejandrogb.metricsserversdesktop.ui.component.ImageCellRenderer;
@@ -31,6 +41,8 @@ import local.alejandrogb.metricsserversdesktop.ui.util.SwingUtils;
 public class ServidoresPanel extends BaseTablePanel<Servidor> {
 
 	private static final long serialVersionUID = -4900329855912330424L;
+	private static final Logger log = LoggerFactory.getLogger(ServidoresPanel.class);
+	private static final int PAGE_SIZE = 20;
 
 	private final ServidorService service = new ServidorService();
 	private final SeccionService secService = new SeccionService();
@@ -41,9 +53,20 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 	private List<Seccion> cachedSecciones = List.of();
 	private List<Servicio> cachedServicios = List.of();
 
+	// ── Pagination state ──────────────────────────────────────────────────
+	private int currentPage = 0;
+	private int totalPages = 1;
+	private int totalElements = 0;
+
+	// ── Pagination controls ───────────────────────────────────────────────
+	private JButton btnPrev;
+	private JButton btnNext;
+	private JLabel lblPagination;
+
 	public ServidoresPanel() {
 		super();
 		initToolbar();
+		setupPagination();
 	}
 
 	@Override
@@ -100,7 +123,8 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 
 	// ── Carga de datos ────────────────────────────────────────────────────
 
-	private record ServidoresData(List<Servidor> servidores, List<Seccion> secciones, List<Servicio> servicios) {
+	private record ServidoresData(PageResponse<Servidor> response, List<Seccion> secciones,
+			List<Servicio> servicios) {
 	}
 
 	@Override
@@ -108,59 +132,116 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 		return service.findAll();
 	}
 
+	/** Recarga desde la página 0 (p.ej. tras crear o importar). */
 	@Override
 	public void refresh() {
+		loadPage(0);
+	}
+
+	/** Carga la página indicada actualizando estado y controles de paginación. */
+	private void loadPage(int page) {
 		showLoading("Cargando datos...");
-		SwingUtils.runAsync(() -> new ServidoresData(service.findAll(), secService.findAll(), srvService.findAll()),
-				data -> {
-					cachedSecciones = data.secciones();
-					cachedServicios = data.servicios();
-					applyServidoresData(data);
-					hideLoading();
-				}, err -> {
-					err.printStackTrace();
-					hideLoading();
-					SwingUtils.showError(this, "Error al cargar datos: " + err.getMessage());
-				});
+		SwingUtils.runAsync(() -> {
+			PageResponse<Servidor> response = service.findPage(page, PAGE_SIZE);
+			List<Seccion> secciones;
+			try {
+				secciones = secService.findAll();
+			} catch (Exception e) {
+				log.warn("No se pudieron cargar las secciones, se mostrará columna vacía: {}", e.getMessage());
+				secciones = List.of();
+			}
+			List<Servicio> servicios;
+			try {
+				servicios = srvService.findAll();
+			} catch (Exception e) {
+				log.warn("No se pudieron cargar los servicios, se mostrará columna vacía: {}", e.getMessage());
+				servicios = List.of();
+			}
+			return new ServidoresData(response, secciones, servicios);
+		}, data -> {
+			currentPage = data.response().getPage();
+			totalPages = Math.max(1, data.response().getTotalPages());
+			totalElements = data.response().getTotal();
+			cachedSecciones = data.secciones();
+			cachedServicios = data.servicios();
+			applyServidoresData(data);
+			hideLoading();
+		}, err -> {
+			log.error("Error cargando servidores (página {})", page, err);
+			hideLoading();
+			SwingUtils.showError(this, "Error al cargar datos: " + err.getMessage());
+		});
 	}
 
 	private void applyServidoresData(ServidoresData data) {
-		model.setData(data.servidores(), data.secciones(), data.servicios());
-		table.setModel(model);
-		table.createDefaultColumnsFromModel();
-		configureTable(table);
-		table.revalidate();
-		table.repaint();
-		if (table.getParent() != null) {
-			table.getParent().revalidate();
-			table.getParent().repaint();
-		}
-		revalidate();
-		repaint();
+		model.setData(data.response().getData(), data.secciones(), data.servicios());
+		refreshTable(model);
 	}
 
 	@Override
 	protected void applyData(List<Servidor> data) {
 		model.setData(data, cachedSecciones, cachedServicios);
-		table.setModel(model);
-		table.createDefaultColumnsFromModel();
-		configureTable(table);
-		table.revalidate();
-		table.repaint();
-		revalidate();
-		repaint();
+		refreshTable(model);
+	}
+
+	// ── Paginación ────────────────────────────────────────────────────────
+
+	private void setupPagination() {
+		JPanel bar = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 4));
+		bar.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY),
+				BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+
+		btnPrev = new JButton("◀ Anterior");
+		btnPrev.setEnabled(false);
+		btnPrev.addActionListener(e -> loadPage(currentPage - 1));
+
+		lblPagination = new JLabel("Página 1 de 1  (0 servidores)");
+
+		btnNext = new JButton("Siguiente ▶");
+		btnNext.setEnabled(false);
+		btnNext.addActionListener(e -> loadPage(currentPage + 1));
+
+		bar.add(btnPrev);
+		bar.add(lblPagination);
+		bar.add(btnNext);
+
+		add(bar, BorderLayout.SOUTH);
+	}
+
+	private void updatePaginationControls() {
+		btnPrev.setEnabled(currentPage > 0);
+		btnNext.setEnabled(currentPage < totalPages - 1);
+		lblPagination.setText(String.format("Página %d de %d  (%d servidores)",
+				currentPage + 1, totalPages, totalElements));
+	}
+
+	@Override
+	protected void showLoading(String msg) {
+		super.showLoading(msg);
+		if (btnPrev != null) {
+			btnPrev.setEnabled(false);
+			btnNext.setEnabled(false);
+		}
+	}
+
+	@Override
+	protected void hideLoading() {
+		super.hideLoading();
+		if (btnPrev != null)
+			updatePaginationControls();
 	}
 
 	// ── Permisos ──────────────────────────────────────────────────────────
 
 	@Override
 	protected boolean canEdit() {
-		return guard.canManageServidores(0) || guard.isSuperAdmin();
+		return guard.canManageServidores(0);
 	}
 
 	@Override
 	protected boolean canDelete() {
-		return guard.canManageServidores(0) || guard.isSuperAdmin();
+		return guard.canManageServidores(0);
 	}
 
 	// ── CRUD ──────────────────────────────────────────────────────────────
@@ -199,7 +280,7 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 				return null;
 			}, v -> {
 				hideLoading();
-				refresh();
+				loadPage(currentPage);
 			}, err -> {
 				hideLoading();
 				SwingUtils.showError(this, err.getMessage());
@@ -223,7 +304,11 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 			return null;
 		}, v -> {
 			hideLoading();
-			refresh();
+			// Si era el último elemento de la página, retroceder una página
+			int targetPage = (totalElements - 1 <= currentPage * PAGE_SIZE && currentPage > 0)
+					? currentPage - 1
+					: currentPage;
+			loadPage(targetPage);
 		}, err -> {
 			hideLoading();
 			SwingUtils.showError(this, err.getMessage());
@@ -253,7 +338,7 @@ public class ServidoresPanel extends BaseTablePanel<Servidor> {
 		SwingUtils.runAsync(() -> service.subirFoto(s.getId(), file.toPath()), result -> {
 			hideLoading();
 			SwingUtils.showInfo(this, "Imagen subida correctamente.");
-			refresh();
+			loadPage(currentPage);
 		}, err -> {
 			hideLoading();
 			SwingUtils.showError(this, "Error al subir la imagen: " + err.getMessage());

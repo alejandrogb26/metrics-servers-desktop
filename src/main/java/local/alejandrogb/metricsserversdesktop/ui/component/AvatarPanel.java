@@ -1,5 +1,7 @@
 package local.alejandrogb.metricsserversdesktop.ui.component;
 
+import local.alejandrogb.metricsserversdesktop.client.api.ApiClient;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -10,7 +12,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
-import java.net.URI;
+import java.io.ByteArrayInputStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -45,7 +47,8 @@ public class AvatarPanel extends JPanel {
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<>() {
 			@Override
 			protected BufferedImage doInBackground() throws Exception {
-				return ImageIO.read(URI.create(url).toURL());
+				byte[] bytes = ApiClient.downloadImageBytes(url);
+				return bytes != null ? ImageIO.read(new ByteArrayInputStream(bytes)) : null;
 			}
 
 			@Override

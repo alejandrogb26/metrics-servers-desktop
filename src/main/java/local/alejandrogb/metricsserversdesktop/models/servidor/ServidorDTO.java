@@ -1,6 +1,7 @@
 package local.alejandrogb.metricsserversdesktop.models.servidor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -8,6 +9,7 @@ public class ServidorDTO {
 
 	private String serverId;
 	private String dns;
+	@JsonProperty("seccionId")
 	private int seccion;
 	private List<Integer> servicios;
 

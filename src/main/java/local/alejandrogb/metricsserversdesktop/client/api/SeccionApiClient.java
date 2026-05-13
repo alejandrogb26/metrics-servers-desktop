@@ -10,7 +10,7 @@ import java.util.Map;
 public class SeccionApiClient extends ApiClient {
 
 	public List<Seccion> findAll() {
-		return get("/seccion", new TypeReference<List<Seccion>>() {
+		return getDataPage("/seccion", 100, new TypeReference<List<Seccion>>() {
 		});
 	}
 

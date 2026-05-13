@@ -9,7 +9,8 @@ public class Session {
 	private String displayName;
 	private String email;
 	private Grupo grupo;
-	private PermissionMap<String> permisos;
+	// api-py devuelve nombres compuestos ("AUDIT_SERV") en globalPerms/sections
+	private PermissionMap permisos;
 	private String urlFoto;
 
 	public Session() {
@@ -47,11 +48,11 @@ public class Session {
 		this.grupo = grupo;
 	}
 
-	public PermissionMap<String> getPermisos() {
+	public PermissionMap getPermisos() {
 		return permisos;
 	}
 
-	public void setPermisos(PermissionMap<String> permisos) {
+	public void setPermisos(PermissionMap permisos) {
 		this.permisos = permisos;
 	}
 

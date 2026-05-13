@@ -121,10 +121,10 @@ public final class SwingUtils {
 	 * @param onError    se ejecuta en EDT con el error si background lanza
 	 *                   excepción
 	 */
-	public static <T> void runAsync(ThrowingSupplier<T> background, java.util.function.Consumer<T> onDone,
-			java.util.function.Consumer<Throwable> onError) {
+	public static <T> SwingWorker<T, Void> runAsync(ThrowingSupplier<T> background,
+			java.util.function.Consumer<T> onDone, java.util.function.Consumer<Throwable> onError) {
 
-		new SwingWorker<T, Void>() {
+		SwingWorker<T, Void> worker = new SwingWorker<T, Void>() {
 			@Override
 			protected T doInBackground() throws Exception {
 				return background.get();
@@ -141,7 +141,9 @@ public final class SwingUtils {
 					onError.accept(ie);
 				}
 			}
-		}.execute();
+		};
+		worker.execute();
+		return worker;
 	}
 
 	@FunctionalInterface

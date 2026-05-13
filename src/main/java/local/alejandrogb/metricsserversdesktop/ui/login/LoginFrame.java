@@ -205,7 +205,8 @@ public class LoginFrame extends JFrame {
 			if (err instanceof ApiException ae) {
 				msg = ae.isUnauthorized() ? "Credenciales inválidas o usuario sin permisos."
 						: ae.isValidationError() ? "Usuario y contraseña son obligatorios."
-								: "Error al conectar con el servidor (" + ae.getStatusCode() + ").";
+								: ae.getStatusCode() == -1 ? ae.getMessage()
+								: "Error del servidor (" + ae.getStatusCode() + ").";
 			} else {
 				msg = "No se puede conectar con la API. Comprueba la configuración.";
 			}

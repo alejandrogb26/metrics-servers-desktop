@@ -9,7 +9,7 @@ import java.util.List;
 public class PermisoApiClient extends ApiClient {
 
 	public List<Permiso> findAll() {
-		return get("/permisos", new TypeReference<List<Permiso>>() {
+		return getDataPage("/permisos", 100, new TypeReference<List<Permiso>>() {
 		});
 	}
 

@@ -3,6 +3,7 @@ package local.alejandrogb.metricsserversdesktop.client.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import local.alejandrogb.metricsserversdesktop.models.BulkResult;
+import local.alejandrogb.metricsserversdesktop.models.PageResponse;
 import local.alejandrogb.metricsserversdesktop.models.servidor.Servidor;
 import local.alejandrogb.metricsserversdesktop.models.servidor.ServidorDTO;
 
@@ -13,7 +14,12 @@ import java.util.Map;
 public class ServidorApiClient extends ApiClient {
 
 	public List<Servidor> findAll() {
-		return get("/servidor", new TypeReference<List<Servidor>>() {
+		return getDataPage("/servidor", 100, new TypeReference<List<Servidor>>() {
+		});
+	}
+
+	public PageResponse<Servidor> findPage(int page, int size) {
+		return getPage("/servidor", page, size, new TypeReference<List<Servidor>>() {
 		});
 	}
 
@@ -39,9 +45,9 @@ public class ServidorApiClient extends ApiClient {
 		delete("/servidor/" + id);
 	}
 
-	/** Elimina varios servidores en lote. */
+	/** Elimina varios servidores en lote. api-py: POST /servidor/bulk-delete */
 	public BulkResult deleteBulk(List<Integer> ids) {
-		return deleteWithBody("/servidor/bulk", ids, new TypeReference<BulkResult>() {
+		return post("/servidor/bulk-delete", ids, new TypeReference<BulkResult>() {
 		});
 	}
 
@@ -51,11 +57,16 @@ public class ServidorApiClient extends ApiClient {
 		});
 	}
 
-	/** Elimina servicios de un servidor. */
-	public Map<String, Object> removeServicios(int servidorId, List<Integer> servicioIds) {
-		return deleteWithBody("/servidor/" + servidorId + "/servicios", servicioIds,
-				new TypeReference<Map<String, Object>>() {
-				});
+	/** Elimina servicios de un servidor. api-py: DELETE /{id}/servicios?ids=1&ids=2 */
+	public void removeServicios(int servidorId, List<Integer> servicioIds) {
+		if (servicioIds == null || servicioIds.isEmpty())
+			return;
+		StringBuilder url = new StringBuilder("/servidor/").append(servidorId).append("/servicios?ids=")
+				.append(servicioIds.get(0));
+		for (int i = 1; i < servicioIds.size(); i++) {
+			url.append("&ids=").append(servicioIds.get(i));
+		}
+		delete(url.toString());
 	}
 
 	/**

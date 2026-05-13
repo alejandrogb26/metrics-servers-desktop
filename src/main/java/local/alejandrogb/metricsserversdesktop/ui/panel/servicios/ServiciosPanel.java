@@ -1,5 +1,6 @@
 package local.alejandrogb.metricsserversdesktop.ui.panel.servicios;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,17 +58,7 @@ public class ServiciosPanel extends BaseTablePanel<Servicio> {
 	@Override
 	protected void applyData(List<Servicio> data) {
 		model.setData(data);
-		table.setModel(model);
-		table.createDefaultColumnsFromModel();
-		configureTable(table);
-		table.revalidate();
-		table.repaint();
-		if (table.getParent() != null) {
-			table.getParent().revalidate();
-			table.getParent().repaint();
-		}
-		revalidate();
-		repaint();
+		refreshTable(model);
 	}
 
 	@Override
@@ -87,7 +78,14 @@ public class ServiciosPanel extends BaseTablePanel<Servicio> {
 		if (!dlg.isConfirmed())
 			return;
 		showLoading("Creando servicio...");
-		SwingUtils.runAsync(() -> service.create(dlg.getServicio()), id -> {
+		Path logoPath = dlg.getLogoPath();
+		SwingUtils.runAsync(() -> {
+			int id = service.create(dlg.getServicio());
+			if (id > 0 && logoPath != null) {
+				service.subirLogo(id, logoPath);
+			}
+			return null;
+		}, v -> {
 			hideLoading();
 			refresh();
 		}, err -> {
@@ -109,8 +107,12 @@ public class ServiciosPanel extends BaseTablePanel<Servicio> {
 		showLoading("Actualizando servicio...");
 		Servicio updated = dlg.getServicio();
 		updated.setId(s.getId());
+		Path logoPath = dlg.getLogoPath();
 		SwingUtils.runAsync(() -> {
 			service.update(updated);
+			if (logoPath != null) {
+				service.subirLogo(s.getId(), logoPath);
+			}
 			return null;
 		}, v -> {
 			hideLoading();

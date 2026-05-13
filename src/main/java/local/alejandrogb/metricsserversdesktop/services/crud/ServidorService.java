@@ -6,6 +6,7 @@ import java.util.Map;
 
 import local.alejandrogb.metricsserversdesktop.client.api.ServidorApiClient;
 import local.alejandrogb.metricsserversdesktop.models.BulkResult;
+import local.alejandrogb.metricsserversdesktop.models.PageResponse;
 import local.alejandrogb.metricsserversdesktop.models.servidor.Servidor;
 import local.alejandrogb.metricsserversdesktop.models.servidor.ServidorDTO;
 
@@ -15,6 +16,10 @@ public class ServidorService {
 
 	public List<Servidor> findAll() {
 		return api.findAll();
+	}
+
+	public PageResponse<Servidor> findPage(int page, int size) {
+		return api.findPage(page, size);
 	}
 
 	public Servidor findById(int id) {

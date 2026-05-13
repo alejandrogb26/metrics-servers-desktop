@@ -2,6 +2,7 @@ package local.alejandrogb.metricsserversdesktop.ui.panel.grupos;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
@@ -53,21 +54,7 @@ public class GruposPanel extends BaseTablePanel<Grupo> {
 	@Override
 	protected void applyData(List<Grupo> data) {
 		model.setData(data);
-
-		table.setModel(model);
-		table.createDefaultColumnsFromModel();
-		configureTable(table);
-
-		table.revalidate();
-		table.repaint();
-
-		if (table.getParent() != null) {
-			table.getParent().revalidate();
-			table.getParent().repaint();
-		}
-
-		revalidate();
-		repaint();
+		refreshTable(model);
 	}
 
 	@Override
@@ -87,7 +74,10 @@ public class GruposPanel extends BaseTablePanel<Grupo> {
 		if (!dlg.isConfirmed())
 			return;
 		showLoading("Creando grupo…");
-		SwingUtils.runAsync(() -> service.create(dlg.getGrupo()), res -> {
+		GrupoDialog.PermisoChanges changes = dlg.getPermisoChanges();
+		List<Integer> globalIds = (changes != null) ? changes.globalAdd() : List.of();
+		Map<Integer, List<Integer>> sectionIds = (changes != null) ? changes.sectionAdd() : Map.of();
+		SwingUtils.runAsync(() -> service.createWithPermisos(dlg.getGrupo(), globalIds, sectionIds), res -> {
 			hideLoading();
 			showBulk(res);
 			refresh();
@@ -112,7 +102,27 @@ public class GruposPanel extends BaseTablePanel<Grupo> {
 			if (!dlg.isConfirmed())
 				return;
 			showLoading("Actualizando grupo…");
-			SwingUtils.runAsync(() -> service.update(g.getId(), dlg.getGrupo()), updated -> {
+			SwingUtils.runAsync(() -> {
+				service.update(g.getId(), full, dlg.getGrupo());
+				GrupoDialog.PermisoChanges changes = dlg.getPermisoChanges();
+				if (changes != null && !changes.isEmpty()) {
+					if (!changes.globalAdd().isEmpty() || !changes.globalRemove().isEmpty()) {
+						service.updateGlobalPermisos(g.getId(), changes.globalAdd(), changes.globalRemove());
+					}
+					// Secciones con añadidos (incluyendo sus eliminaciones del mismo seccionId)
+					for (Map.Entry<Integer, List<Integer>> e : changes.sectionAdd().entrySet()) {
+						service.updateSeccionPermisos(g.getId(), e.getKey(), e.getValue(),
+								changes.sectionRemove().getOrDefault(e.getKey(), List.of()));
+					}
+					// Secciones con solo eliminaciones
+					for (Map.Entry<Integer, List<Integer>> e : changes.sectionRemove().entrySet()) {
+						if (!changes.sectionAdd().containsKey(e.getKey())) {
+							service.updateSeccionPermisos(g.getId(), e.getKey(), List.of(), e.getValue());
+						}
+					}
+				}
+				return null;
+			}, v -> {
 				hideLoading();
 				refresh();
 			}, err -> {

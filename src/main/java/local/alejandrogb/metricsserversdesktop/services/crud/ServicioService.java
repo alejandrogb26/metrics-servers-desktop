@@ -1,5 +1,6 @@
 package local.alejandrogb.metricsserversdesktop.services.crud;
 
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,14 @@ public class ServicioService {
 		Map<String, Object> fields = new LinkedHashMap<>();
 		if (servicio.getNombre() != null)
 			fields.put("nombre", servicio.getNombre());
-		if (servicio.getLogo() != null)
-			fields.put("logo", servicio.getLogo());
 		if (!fields.isEmpty()) {
 			api.patch(servicio.getId(), fields);
 		}
+	}
+
+	/** Sube o reemplaza el logo de un servicio. POST /servicio/{id}/logo. */
+	public Map<String, Object> subirLogo(int id, Path file) {
+		return api.subirLogo(id, file);
 	}
 
 	public void delete(int id) {

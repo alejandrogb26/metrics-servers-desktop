@@ -1,6 +1,7 @@
 package local.alejandrogb.metricsserversdesktop.models.servidor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,6 +16,7 @@ public class Servidor {
 	private String kernel;
 	private String imagen;
 	private String imagenUrl;
+	@JsonProperty("seccionId")
 	private int seccion;
 	private List<Integer> servicios;
 

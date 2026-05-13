@@ -9,7 +9,7 @@ import java.util.List;
 public class AmbitoApiClient extends ApiClient {
 
 	public List<Ambito> findAll() {
-		return get("/ambitos", new TypeReference<List<Ambito>>() {
+		return getDataPage("/ambitos", 100, new TypeReference<List<Ambito>>() {
 		});
 	}
 

@@ -6,19 +6,23 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/metrics-client.log</file>
+        <file>${user.home}/.metrics-manager/logs/metrics-client.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/metrics-client.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>7</maxHistory>
+            <fileNamePattern>${user.home}/.metrics-manager/logs/metrics-client.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="local.alejandrogb" level="DEBUG"/>
+    <!--
+        Nivel base del paquete de la app: INFO en producción.
+        App.java lo eleva a DEBUG en tiempo de ejecución si debug=true / DEBUG=true.
+    -->
+    <logger name="local.alejandrogb" level="INFO"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

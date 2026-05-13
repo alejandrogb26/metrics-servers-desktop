@@ -19,7 +19,7 @@ public class AuthService {
 	 * @param username sAMAccountName del usuario AD
 	 * @param password contraseña
 	 * @return LoginResponse con el token y la sesión
-	 * @throws local.alejandrogb.metricsapp.client.exception.ApiException si las
+	 * @throws local.alejandrogb.metricsserversdesktop.client.exception.ApiException si las
 	 *                                                                    credenciales
 	 *                                                                    son
 	 *                                                                    incorrectas
@@ -38,6 +38,13 @@ public class AuthService {
 
 	public void logout() {
 		log.info("Cerrando sesión para '{}'", sessionHolder.getUsername());
+		try {
+			apiClient.logout();
+			log.debug("POST /auth/logout OK — JTI revocado en Redis");
+		} catch (Exception e) {
+			log.warn("No se pudo revocar el token en el backend (logout local de todas formas): {}", e.getMessage());
+		}
 		sessionHolder.clear();
 	}
+
 }

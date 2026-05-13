@@ -1,11 +1,13 @@
 package local.alejandrogb.metricsserversdesktop.ui.component;
 
+import local.alejandrogb.metricsserversdesktop.client.api.ApiClient;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.net.URI;
+import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -67,7 +69,10 @@ public class ImageCellRenderer extends DefaultTableCellRenderer {
 			@Override
 			protected ImageIcon doInBackground() {
 				try {
-					BufferedImage img = ImageIO.read(URI.create(url).toURL());
+					byte[] bytes = ApiClient.downloadImageBytes(url);
+					if (bytes == null)
+						return PLACEHOLDER;
+					BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
 					if (img == null)
 						return PLACEHOLDER;
 					Image scaled = img.getScaledInstance(IMG_SIZE, IMG_SIZE, Image.SCALE_SMOOTH);
